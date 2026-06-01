@@ -1,4 +1,0 @@
-include README.md
-include LICENSE
-include example.py
-recursive-include Kurdish_Characters *.py
