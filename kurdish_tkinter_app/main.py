@@ -268,11 +268,11 @@ class KurdishToolsApp:
         frame = self._make_frame(notebook, "نۆرمالکردن")
         frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="نۆرمالکردنی دەقی کوردی",
+        ttk.Label(frame, text="نۆرمالکردنی دەقی کوردی و چاککردنی لینک",
                   style="Header.TLabel").grid(
             row=0, column=0, columnspan=3, pady=8)
 
-        entry = self._make_entry(frame, 1, ":دەق")
+        entry = self._make_entry(frame, 1, ":دەق/لینک")
         result_var = self._make_result(frame, 4)
 
         def normalize():
@@ -284,6 +284,9 @@ class KurdishToolsApp:
         def to_slug():
             result_var.set(KurdishStringUtils.to_slug(entry.get()))
 
+        def url_fix_btn():
+            result_var.set(fix_url(entry.get()))
+
         btn_frame = tk.Frame(frame, bg="#16213e")
         btn_frame.grid(row=2, column=0, columnspan=3, pady=8)
         ttk.Button(btn_frame, text="نۆرمال",
@@ -292,6 +295,8 @@ class KurdishToolsApp:
                    command=normalize_all).pack(side="left", padx=4)
         ttk.Button(btn_frame, text="Slug بۆ URL",
                    command=to_slug).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="چاککردنی لینک 🔗",
+                   command=url_fix_btn).pack(side="left", padx=4)
 
     # ─── Tab 5: Phone Number ───
     def _tab_phone(self, notebook):
@@ -359,14 +364,33 @@ class KurdishToolsApp:
                 f"وشە: {wc} | پیت: {cc} | ڕستە: {sc}"
             )
 
+        def check_number():
+            text = entry.get()
+            lines = []
+            if KurdishNumberValidator.is_kurdish_number(text):
+                lines.append("✅ ژمارەی کوردییە")
+            elif KurdishNumberValidator.is_english_number(text):
+                lines.append("✅ ژمارەی ئینگلیزییە")
+            elif KurdishNumberValidator.is_number(text):
+                lines.append("✅ ژمارەیە")
+            else:
+                lines.append("❌ ژمارە نییە")
+            if KurdishNumberValidator.is_decimal(text):
+                lines.append("• ژمارەی دەییە")
+            if KurdishNumberValidator.is_negative(text):
+                lines.append("• ژمارەی نەرێیە")
+            result_var.set("\n".join(lines))
+
         btn_frame = tk.Frame(frame, bg="#16213e")
         btn_frame.grid(row=2, column=0, columnspan=3, pady=8)
         ttk.Button(btn_frame, text="کوردییە؟ 🔍",
-                   command=check_kurdish).pack(side="left", padx=4)
+                   command=check_kurdish).pack(side="left", padx=3)
         ttk.Button(btn_frame, text="ئاڕاستە ↔",
-                   command=check_direction).pack(side="left", padx=4)
+                   command=check_direction).pack(side="left", padx=3)
         ttk.Button(btn_frame, text="ژمردن 📊",
-                   command=word_count).pack(side="left", padx=4)
+                   command=word_count).pack(side="left", padx=3)
+        ttk.Button(btn_frame, text="ژمارە؟ 🔢",
+                   command=check_number).pack(side="left", padx=3)
 
     # ─── Tab 7: Currency ───
     def _tab_currency(self, notebook):
