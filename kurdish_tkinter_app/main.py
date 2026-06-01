@@ -96,13 +96,13 @@ class KurdishToolsApp:
         style.theme_use("clam")
         style.configure("TNotebook", background="#1a1a2e")
         style.configure("TNotebook.Tab", padding=[10, 5],
-                        font=("Segoe UI", 9))
+                        font=("Tahoma", 9))
         style.configure("TFrame", background="#16213e")
         style.configure("TLabel", background="#16213e",
-                        foreground="#e0e0e0", font=("Segoe UI", 11))
-        style.configure("TButton", font=("Segoe UI", 10, "bold"),
+                        foreground="#e0e0e0", font=("Tahoma", 11))
+        style.configure("TButton", font=("Tahoma", 10, "bold"),
                         padding=[10, 5])
-        style.configure("Header.TLabel", font=("Segoe UI", 13, "bold"),
+        style.configure("Header.TLabel", font=("Tahoma", 13, "bold"),
                         foreground="#4fc3f7")
 
         self._build_header()
@@ -118,7 +118,7 @@ class KurdishToolsApp:
 
         tk.Label(header, text=f"🌟 {greeting} — {date}",
                  bg="#0f3460", fg="#4fc3f7",
-                 font=("Segoe UI", 12, "bold")).pack(pady=15)
+                 font=("Tahoma", 12, "bold")).pack(pady=15)
 
     def _build_notebook(self):
         notebook = ttk.Notebook(self.root)
@@ -144,7 +144,7 @@ class KurdishToolsApp:
     def _make_entry(self, parent, row, label_text, width=35):
         ttk.Label(parent, text=label_text).grid(
             row=row, column=0, sticky="e", padx=5, pady=6)
-        entry = tk.Entry(parent, width=width, font=("Segoe UI", 12),
+        entry = tk.Entry(parent, width=width, font=("Tahoma", 12),
                          bg="#1a1a2e", fg="#ffffff",
                          insertbackground="#4fc3f7",
                          relief="flat", highlightthickness=1,
@@ -155,7 +155,7 @@ class KurdishToolsApp:
     def _make_result(self, parent, row):
         result_var = tk.StringVar()
         lbl = tk.Label(parent, textvariable=result_var,
-                       font=("Segoe UI", 12, "bold"),
+                       font=("Tahoma", 12, "bold"),
                        bg="#16213e", fg="#76ff03", wraplength=500,
                        justify="right")
         lbl.grid(row=row, column=0, columnspan=3, pady=12, sticky="ew")
