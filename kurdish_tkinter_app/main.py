@@ -158,6 +158,8 @@ class KurdishToolsApp:
                          relief="flat", highlightthickness=1,
                          highlightcolor="#4fc3f7")
         entry.grid(row=row, column=1, sticky="w", padx=5, pady=6)
+        # Fix Kurdish keyboard input (Windows Tcl/Tk bug)
+        KurdishTkinter.fix_input(entry)
         return entry
 
     def _make_result(self, parent, row):
