@@ -1,11 +1,10 @@
 ﻿"""
 Kurdish Sorani Tools - Kivy Mobile App
-Ø¦Ø§Ù…Ø±Ø§Ø²Û•Ú©Ø§Ù†ÛŒ Ú©ÙˆØ±Ø¯ÛŒ Ø³Û†Ø±Ø§Ù†ÛŒ - Ø¦Û•Ù¾ÛŒ Ù…Û†Ø¨Ø§ÛŒÙ„
-
 Uses the kurdish-sorani-tools package.
 Works on Android, iOS, Windows, Linux, macOS.
 """
 
+import os
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
@@ -18,6 +17,14 @@ from kivy.core.text import LabelBase
 from kivy.utils import get_color_from_hex
 from kivy.metrics import sp, dp
 from datetime import datetime, timedelta
+
+# Register Kurdish-compatible font
+FONT_PATH = os.path.join(os.environ.get("WINDIR", "C:\\Windows"), "Fonts", "tahoma.ttf")
+if os.path.exists(FONT_PATH):
+    LabelBase.register(name="Kurdish", fn_regular=FONT_PATH)
+    DEFAULT_FONT = "Kurdish"
+else:
+    DEFAULT_FONT = "Roboto"
 
 from kurdish_sorani_tools import (
     convert_en_to_ku, convert_ku_to_en,
@@ -57,26 +64,25 @@ WHITE = get_color_from_hex("#ffffff")
 
 
 class ResultLabel(Label):
-    """Styled result label."""
     def __init__(self, **kwargs):
         kwargs.setdefault("color", GREEN)
         kwargs.setdefault("font_size", sp(16))
+        kwargs.setdefault("font_name", DEFAULT_FONT)
         kwargs.setdefault("halign", "right")
         kwargs.setdefault("valign", "middle")
         kwargs.setdefault("size_hint_y", None)
-        kwargs.setdefault("height", dp(60))
-        kwargs.setdefault("text_size", (None, None))
+        kwargs.setdefault("height", dp(80))
         super().__init__(**kwargs)
-        self.bind(size=self._update_text_size)
+        self.bind(size=self._update)
 
-    def _update_text_size(self, *args):
+    def _update(self, *a):
         self.text_size = (self.width - dp(20), None)
 
 
 class KurdishInput(TextInput):
-    """Styled text input for Kurdish."""
     def __init__(self, **kwargs):
         kwargs.setdefault("font_size", sp(16))
+        kwargs.setdefault("font_name", DEFAULT_FONT)
         kwargs.setdefault("size_hint_y", None)
         kwargs.setdefault("height", dp(50))
         kwargs.setdefault("multiline", False)
@@ -84,15 +90,15 @@ class KurdishInput(TextInput):
         kwargs.setdefault("background_color", get_color_from_hex("#0f3460"))
         kwargs.setdefault("foreground_color", WHITE)
         kwargs.setdefault("cursor_color", ACCENT)
-        kwargs.setdefault("hint_text_color", get_color_from_hex("#666666"))
+        kwargs.setdefault("hint_text_color", get_color_from_hex("#888888"))
         kwargs.setdefault("padding", [dp(10), dp(12)])
         super().__init__(**kwargs)
 
 
 class KurdishButton(Button):
-    """Styled action button."""
     def __init__(self, **kwargs):
         kwargs.setdefault("font_size", sp(13))
+        kwargs.setdefault("font_name", DEFAULT_FONT)
         kwargs.setdefault("size_hint_y", None)
         kwargs.setdefault("height", dp(45))
         kwargs.setdefault("background_color", get_color_from_hex("#0f3460"))
@@ -102,467 +108,372 @@ class KurdishButton(Button):
 
 
 def make_tab_content(title, widgets_fn):
-    """Create a scrollable tab content."""
     scroll = ScrollView()
     layout = BoxLayout(orientation="vertical", padding=dp(15),
                        spacing=dp(10), size_hint_y=None)
     layout.bind(minimum_height=layout.setter("height"))
 
-    # Header
-    header = Label(text=title, font_size=sp(18), color=ACCENT,
-                   bold=True, size_hint_y=None, height=dp(40),
-                   halign="center")
+    header = Label(text=title, font_size=sp(18), font_name=DEFAULT_FONT,
+                   color=ACCENT, bold=True, size_hint_y=None, height=dp(40))
     header.bind(size=lambda *a: setattr(header, 'text_size', (header.width, None)))
     layout.add_widget(header)
 
     widgets_fn(layout)
-
     scroll.add_widget(layout)
     return scroll
 
 
 class KurdishToolsApp(App):
-    title = "Ø¦Ø§Ù…Ø±Ø§Ø²Û•Ú©Ø§Ù†ÛŒ Ú©ÙˆØ±Ø¯ÛŒ Ø³Û†Ø±Ø§Ù†ÛŒ"
 
     def build(self):
-        self.root_layout = BoxLayout(orientation="vertical")
+        self.title = "Kurdish Sorani Tools"
+        root = BoxLayout(orientation="vertical")
 
         # Header
-        header = BoxLayout(size_hint_y=None, height=dp(70),
-                           padding=[dp(10), dp(10)])
         greeting = kurdish_greeting()
-        date = KurdishDateTime.today("EEEEØŒ dd MMMM yyyy")
-        header_label = Label(
-            text=f"[b]{greeting}[/b] â€” {date}",
-            markup=True, font_size=sp(15), color=ACCENT,
-            halign="center"
+        date = KurdishDateTime.today("EEEE, dd MMMM yyyy")
+        header = Label(
+            text=f"{greeting} - {date}",
+            font_name=DEFAULT_FONT, font_size=sp(15),
+            color=ACCENT, bold=True,
+            size_hint_y=None, height=dp(60)
         )
-        header_label.bind(size=lambda *a: setattr(
-            header_label, 'text_size', (header_label.width, None)))
-        header.add_widget(header_label)
-        self.root_layout.add_widget(header)
+        root.add_widget(header)
 
-        # Tabbed Panel
-        tp = TabbedPanel(do_default_tab=False, tab_width=dp(90))
+        # Tabs
+        tp = TabbedPanel(do_default_tab=False, tab_width=dp(100))
 
-        # Tab 1: Number to Words
-        tab1 = TabbedPanelItem(text="Ú˜Ù…Ø§Ø±Û• Ø¨Û† ÙˆØ´Û•")
-        tab1.add_widget(make_tab_content(
-            "Ú¯Û†Ú•ÛŒÙ†ÛŒ Ú˜Ù…Ø§Ø±Û• Ø¨Û† Ù†ÙˆÙˆØ³ÛŒÙ†ÛŒ Ú©ÙˆØ±Ø¯ÛŒ", self._build_number_tab))
-        tp.add_widget(tab1)
+        t1 = TabbedPanelItem(text="Number")
+        t1.add_widget(make_tab_content(
+            "Number to Kurdish Words", self._tab_number))
+        tp.add_widget(t1)
 
-        # Tab 2: Digits & Commas
-        tab2 = TabbedPanelItem(text="Ú¯Û†Ú•ÛŒÙ†ÛŒ Ú˜Ù…Ø§Ø±Û•")
-        tab2.add_widget(make_tab_content(
-            "Ú¯Û†Ú•ÛŒÙ†ÛŒ Ú˜Ù…Ø§Ø±Û• Ùˆ ÙØ§Ø±ÛŒØ²Û•", self._build_digits_tab))
-        tp.add_widget(tab2)
+        t2 = TabbedPanelItem(text="Digits")
+        t2.add_widget(make_tab_content(
+            "Digit Conversion", self._tab_digits))
+        tp.add_widget(t2)
 
-        # Tab 3: Keyboard
-        tab3 = TabbedPanelItem(text="Ú©ÛŒØ¨Û†Ø±Ø¯")
-        tab3.add_widget(make_tab_content(
-            "Ú¯Û†Ú•ÛŒÙ†ÛŒ Ù„Û•ÛŒØ§ÙˆØªÛŒ Ú©ÛŒØ¨Û†Ø±Ø¯", self._build_keyboard_tab))
-        tp.add_widget(tab3)
+        t3 = TabbedPanelItem(text="Keyboard")
+        t3.add_widget(make_tab_content(
+            "Keyboard Converter", self._tab_keyboard))
+        tp.add_widget(t3)
 
-        # Tab 4: Normalizer
-        tab4 = TabbedPanelItem(text="Ù†Û†Ø±Ù…Ø§Ù„Ú©Ø±Ø¯Ù†")
-        tab4.add_widget(make_tab_content(
-            "Ù†Û†Ø±Ù…Ø§Ù„Ú©Ø±Ø¯Ù†ÛŒ Ø¯Û•Ù‚ Ùˆ Ú†Ø§Ú©Ú©Ø±Ø¯Ù†ÛŒ Ù„ÛŒÙ†Ú©", self._build_normalizer_tab))
-        tp.add_widget(tab4)
+        t4 = TabbedPanelItem(text="Normalize")
+        t4.add_widget(make_tab_content(
+            "Text Normalizer", self._tab_normalizer))
+        tp.add_widget(t4)
 
-        # Tab 5: Phone
-        tab5 = TabbedPanelItem(text="Ù…Û†Ø¨Ø§ÛŒÙ„")
-        tab5.add_widget(make_tab_content(
-            "Ú˜Ù…Ø§Ø±Û•ÛŒ Ù…Û†Ø¨Ø§ÛŒÙ„ÛŒ Ø¹Ø±Ø§Ù‚ÛŒ", self._build_phone_tab))
-        tp.add_widget(tab5)
+        t5 = TabbedPanelItem(text="Phone")
+        t5.add_widget(make_tab_content(
+            "Iraqi Phone Number", self._tab_phone))
+        tp.add_widget(t5)
 
-        # Tab 6: Detection
-        tab6 = TabbedPanelItem(text="Ø¯Û†Ø²ÛŒÙ†Û•ÙˆÛ•")
-        tab6.add_widget(make_tab_content(
-            "Ù¾Ø´Ú©Ù†ÛŒÙ†ÛŒ Ø¯Û•Ù‚", self._build_detection_tab))
-        tp.add_widget(tab6)
+        t6 = TabbedPanelItem(text="Detect")
+        t6.add_widget(make_tab_content(
+            "Text Detection", self._tab_detect))
+        tp.add_widget(t6)
 
-        # Tab 7: Currency
-        tab7 = TabbedPanelItem(text="Ø¯Ø±Ø§Ùˆ")
-        tab7.add_widget(make_tab_content(
-            "ÙÛ†Ø±Ù…Ø§ØªÚ©Ø±Ø¯Ù†ÛŒ Ø¯Ø±Ø§Ùˆ", self._build_currency_tab))
-        tp.add_widget(tab7)
+        t7 = TabbedPanelItem(text="Currency")
+        t7.add_widget(make_tab_content(
+            "Currency Formatter", self._tab_currency))
+        tp.add_widget(t7)
 
-        # Tab 8: Plural
-        tab8 = TabbedPanelItem(text="Ú©Û†Ú©Ø±Ø¯Ù†Û•ÙˆÛ•")
-        tab8.add_widget(make_tab_content(
-            "Ú©Û†Ú©Ø±Ø¯Ù†Û•ÙˆÛ•ÛŒ ÙˆØ´Û•Ú©Ø§Ù†", self._build_plural_tab))
-        tp.add_widget(tab8)
+        t8 = TabbedPanelItem(text="Plural")
+        t8.add_widget(make_tab_content(
+            "Pluralization", self._tab_plural))
+        tp.add_widget(t8)
 
-        # Tab 9: Calendar
-        tab9 = TabbedPanelItem(text="Ú•Û†Ú˜Ú˜Ù…ÛŽØ±")
-        tab9.add_widget(make_tab_content(
-            "Ú•Û†Ú˜Ú˜Ù…ÛŽØ± Ùˆ Ú©Ø§ØªÛŒ Ù†Ø³Ø¨ÛŒ", self._build_calendar_tab))
-        tp.add_widget(tab9)
+        t9 = TabbedPanelItem(text="Calendar")
+        t9.add_widget(make_tab_content(
+            "Calendar & More", self._tab_calendar))
+        tp.add_widget(t9)
 
-        self.root_layout.add_widget(tp)
-        return self.root_layout
+        root.add_widget(tp)
+        return root
 
-    # â”€â”€â”€ Tab Builders â”€â”€â”€
-
-    def _build_number_tab(self, layout):
-        inp = KurdishInput(hint_text="Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•... (12345)")
-        result = ResultLabel(text="")
+    def _tab_number(self, layout):
+        inp = KurdishInput(hint_text="Enter number... (12345)")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=3, size_hint_y=None, height=dp(50), spacing=dp(5))
 
-        def convert_v1(_):
+        def v1(_):
             try:
-                num = int(inp.text.replace(",", ""))
-                result.text = number_to_words(num)
-            except ValueError:
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û•ÛŒÛ•Ú©ÛŒ Ú•Ø§Ø³Øª Ø¨Ù†ÙˆÙˆØ³Û•"
+                result.text = number_to_words(int(inp.text.replace(",", "")))
+            except: result.text = "Enter a valid number"
 
-        def convert_v2(_):
+        def v2(_):
             r = digit_to_word(inp.text, StrType.STR_WORD)
-            result.text = r if r else "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•"
+            result.text = r if r else "Enter a number"
 
-        def to_ordinal(_):
+        def ordinal(_):
             try:
-                num = int(inp.text.replace(",", ""))
-                result.text = KurdishOrdinal.from_number(num)
-            except ValueError:
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•"
+                result.text = KurdishOrdinal.from_number(int(inp.text.replace(",", "")))
+            except: result.text = "Enter a number"
 
-        b1 = KurdishButton(text="Ú¯Û†Ú•ÛŒÙ† V1")
-        b1.bind(on_press=convert_v1)
-        b2 = KurdishButton(text="Ú¯Û†Ú•ÛŒÙ† V2")
-        b2.bind(on_press=convert_v2)
-        b3 = KurdishButton(text="Ú•ÛŽØ²Ø¨Û•Ù†Ø¯ÛŒ")
-        b3.bind(on_press=to_ordinal)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-
+        b1 = KurdishButton(text="To Words V1"); b1.bind(on_press=v1)
+        b2 = KurdishButton(text="To Words V2"); b2.bind(on_press=v2)
+        b3 = KurdishButton(text="Ordinal"); b3.bind(on_press=ordinal)
+        btns.add_widget(b1); btns.add_widget(b2); btns.add_widget(b3)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_digits_tab(self, layout):
-        inp = KurdishInput(hint_text="Ú˜Ù…Ø§Ø±Û• ÛŒØ§Ù† ÙˆØ´Û• Ø¨Ù†ÙˆÙˆØ³Û•...")
-        result = ResultLabel(text="")
+    def _tab_digits(self, layout):
+        inp = KurdishInput(hint_text="Enter number or text...")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=dp(100), spacing=dp(5))
 
         def to_ku(_): result.text = convert_en_to_ku(inp.text)
         def to_en(_): result.text = convert_ku_to_en(inp.text)
-        def to_comma(_): result.text = add_commas(inp.text.replace(",", ""))
-        def to_num(_):
+        def comma(_): result.text = add_commas(inp.text.replace(",", ""))
+        def w2n(_):
             r = words_to_number(inp.text)
-            result.text = str(r) if r is not None else "âš ï¸"
+            result.text = str(r) if r is not None else "Could not convert"
 
-        b1 = KurdishButton(text="Ø¨Û† Ú©ÙˆØ±Ø¯ÛŒ Ù¡Ù¢Ù£")
-        b1.bind(on_press=to_ku)
-        b2 = KurdishButton(text="Ø¨Û† Ø¦ÛŒÙ†Ú¯Ù„ÛŒØ²ÛŒ 123")
-        b2.bind(on_press=to_en)
-        b3 = KurdishButton(text="ÙØ§Ø±ÛŒØ²Û• 1,000")
-        b3.bind(on_press=to_comma)
-        b4 = KurdishButton(text="ÙˆØ´Û• â†’ Ú˜Ù…Ø§Ø±Û•")
-        b4.bind(on_press=to_num)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-        btns.add_widget(b4)
-
+        b1 = KurdishButton(text="To Kurdish 123"); b1.bind(on_press=to_ku)
+        b2 = KurdishButton(text="To English 123"); b2.bind(on_press=to_en)
+        b3 = KurdishButton(text="Add Commas"); b3.bind(on_press=comma)
+        b4 = KurdishButton(text="Words to Num"); b4.bind(on_press=w2n)
+        btns.add_widget(b1); btns.add_widget(b2)
+        btns.add_widget(b3); btns.add_widget(b4)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_keyboard_tab(self, layout):
-        inp = KurdishInput(hint_text="Ø¯Û•Ù‚ÛŒ Ø¦ÛŒÙ†Ú¯Ù„ÛŒØ²ÛŒ Ø¨Ù†ÙˆÙˆØ³Û•... (slaw)")
-        result = ResultLabel(text="")
+    def _tab_keyboard(self, layout):
+        inp = KurdishInput(hint_text="Type English... (slaw)")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=dp(50), spacing=dp(5))
-
-        def en_to_ku(_): result.text = KurdishKeyboard.en_to_ku(inp.text)
-        def ku_to_en(_): result.text = KurdishKeyboard.ku_to_en(inp.text)
-
-        b1 = KurdishButton(text="Ø¦ÛŒÙ†Ú¯Ù„ÛŒØ²ÛŒ â†’ Ú©ÙˆØ±Ø¯ÛŒ")
-        b1.bind(on_press=en_to_ku)
-        b2 = KurdishButton(text="Ú©ÙˆØ±Ø¯ÛŒ â†’ Ø¦ÛŒÙ†Ú¯Ù„ÛŒØ²ÛŒ")
-        b2.bind(on_press=ku_to_en)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-
+        def en2ku(_): result.text = KurdishKeyboard.en_to_ku(inp.text)
+        def ku2en(_): result.text = KurdishKeyboard.ku_to_en(inp.text)
+        b1 = KurdishButton(text="EN -> Kurdish"); b1.bind(on_press=en2ku)
+        b2 = KurdishButton(text="Kurdish -> EN"); b2.bind(on_press=ku2en)
+        btns.add_widget(b1); btns.add_widget(b2)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_normalizer_tab(self, layout):
-        inp = KurdishInput(hint_text="Ø¯Û•Ù‚ ÛŒØ§Ù† Ù„ÛŒÙ†Ú© Ø¨Ù†ÙˆÙˆØ³Û•...")
-        result = ResultLabel(text="")
+    def _tab_normalizer(self, layout):
+        inp = KurdishInput(hint_text="Enter text or URL...")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=dp(100), spacing=dp(5))
-
-        def normalize(_): result.text = KurdishNormalizer.normalize(inp.text)
-        def normalize_all(_): result.text = KurdishNormalizer.normalize_all(inp.text)
+        def norm(_): result.text = KurdishNormalizer.normalize(inp.text)
+        def norm_all(_): result.text = KurdishNormalizer.normalize_all(inp.text)
         def slug(_): result.text = KurdishStringUtils.to_slug(inp.text)
         def url(_): result.text = fix_url(inp.text)
-
-        b1 = KurdishButton(text="Ù†Û†Ø±Ù…Ø§Ù„")
-        b1.bind(on_press=normalize)
-        b2 = KurdishButton(text="Ù†Û†Ø±Ù…Ø§Ù„ÛŒ ØªÛ•ÙˆØ§Ùˆ")
-        b2.bind(on_press=normalize_all)
-        b3 = KurdishButton(text="Slug")
-        b3.bind(on_press=slug)
-        b4 = KurdishButton(text="Ú†Ø§Ú©Ú©Ø±Ø¯Ù†ÛŒ Ù„ÛŒÙ†Ú©")
-        b4.bind(on_press=url)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-        btns.add_widget(b4)
-
+        b1 = KurdishButton(text="Normalize"); b1.bind(on_press=norm)
+        b2 = KurdishButton(text="Normalize All"); b2.bind(on_press=norm_all)
+        b3 = KurdishButton(text="URL Slug"); b3.bind(on_press=slug)
+        b4 = KurdishButton(text="Fix URL"); b4.bind(on_press=url)
+        btns.add_widget(b1); btns.add_widget(b2)
+        btns.add_widget(b3); btns.add_widget(b4)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_phone_tab(self, layout):
+    def _tab_phone(self, layout):
         inp = KurdishInput(hint_text="07501234567")
-        result = ResultLabel(text="")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         def check(_):
-            phone = inp.text
-            formatted = KurdishPhone.format(phone)
-            valid = KurdishPhone.is_valid(phone)
-            operator = KurdishPhone.get_operator(phone) or "Ù†Û•Ù†Ø§Ø³Ø±Ø§Ùˆ"
-            intl = KurdishPhone.to_international(phone) if valid else "â€”"
+            p = inp.text
+            valid = KurdishPhone.is_valid(p)
+            op = KurdishPhone.get_operator(p) or "Unknown"
+            intl = KurdishPhone.to_international(p) if valid else "-"
             result.text = (
-                f"ÙÛ†Ø±Ù…Ø§Øª: {formatted}\n"
-                f"Ø¦Û†Ù¾Û•Ø±Û•ÛŒØªÛ•Ø±: {operator}\n"
-                f"Ú•Ø§Ø³ØªÛ•ØŸ: {'Ø¨Û•ÚµÛŽ âœ…' if valid else 'Ù†Û•Ø®ÛŽØ± âŒ'}\n"
-                f"Ù†ÛŽÙˆØ¯Û•ÙˆÚµÛ•ØªÛŒ: {intl}"
+                f"Format: {KurdishPhone.format(p)}\n"
+                f"Operator: {op}\n"
+                f"Valid: {'Yes' if valid else 'No'}\n"
+                f"International: {intl}"
             )
 
-        btn = KurdishButton(text="Ù¾Ø´Ú©Ù†ÛŒÙ† ðŸ“±")
-        btn.bind(on_press=check)
+        btn = KurdishButton(text="Check Phone"); btn.bind(on_press=check)
         layout.add_widget(btn)
         layout.add_widget(result)
 
-    def _build_detection_tab(self, layout):
-        inp = KurdishInput(hint_text="Ø¯Û•Ù‚ÛŽÚ© Ø¨Ù†ÙˆÙˆØ³Û•...")
-        result = ResultLabel(text="")
+    def _tab_detect(self, layout):
+        inp = KurdishInput(hint_text="Enter text...")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=dp(100), spacing=dp(5))
 
-        def check_kurdish(_):
-            text = inp.text
-            if is_kurdish(text):
-                result.text = "âœ… ØªÛ•ÙˆØ§ÙˆÛŒ Ø¯Û•Ù‚Û•Ú©Û• Ú©ÙˆØ±Ø¯ÛŒÛŒÛ•"
-            elif has_kurdish(text):
-                result.text = "âš ï¸ Ù‡Û•Ù†Ø¯ÛŽÚ© Ù¾ÛŒØªÛŒ Ú©ÙˆØ±Ø¯ÛŒ ØªÛŽØ¯Ø§ÛŒÛ•"
-            else:
-                result.text = "âŒ Ù‡ÛŒÚ† Ù¾ÛŒØªÛŒ Ú©ÙˆØ±Ø¯ÛŒ ØªÛŽØ¯Ø§ Ù†ÛŒÛŒÛ•"
+        def kurdish(_):
+            t = inp.text
+            if is_kurdish(t): result.text = "All Kurdish"
+            elif has_kurdish(t): result.text = "Contains Kurdish"
+            else: result.text = "No Kurdish"
 
-        def check_dir(_):
+        def direction(_):
             d = KurdishTextDirection.detect_direction(inp.text)
-            result.text = f"Ø¦Ø§Ú•Ø§Ø³ØªÛ•: {'RTL â†' if d == 'rtl' else 'LTR â†’'}"
+            result.text = f"Direction: {d.upper()}"
 
         def count(_):
-            text = inp.text
-            wc = KurdishStringUtils.word_count(text)
-            cc = KurdishStringUtils.char_count(text)
-            sc = KurdishSentence.sentence_count(text)
-            result.text = f"ÙˆØ´Û•: {wc} | Ù¾ÛŒØª: {cc} | Ú•Ø³ØªÛ•: {sc}"
+            t = inp.text
+            result.text = (
+                f"Words: {KurdishStringUtils.word_count(t)}\n"
+                f"Chars: {KurdishStringUtils.char_count(t)}\n"
+                f"Sentences: {KurdishSentence.sentence_count(t)}"
+            )
 
-        def validate_num(_):
-            text = inp.text
-            if KurdishNumberValidator.is_kurdish_number(text):
-                result.text = "âœ… Ú˜Ù…Ø§Ø±Û•ÛŒ Ú©ÙˆØ±Ø¯ÛŒÛŒÛ•"
-            elif KurdishNumberValidator.is_number(text):
-                result.text = "âœ… Ú˜Ù…Ø§Ø±Û•ÛŒÛ•"
+        def numval(_):
+            t = inp.text
+            if KurdishNumberValidator.is_kurdish_number(t):
+                result.text = "Kurdish number"
+            elif KurdishNumberValidator.is_number(t):
+                result.text = "Valid number"
             else:
-                result.text = "âŒ Ú˜Ù…Ø§Ø±Û• Ù†ÛŒÛŒÛ•"
+                result.text = "Not a number"
 
-        b1 = KurdishButton(text="Ú©ÙˆØ±Ø¯ÛŒÛŒÛ•ØŸ ðŸ”")
-        b1.bind(on_press=check_kurdish)
-        b2 = KurdishButton(text="Ø¦Ø§Ú•Ø§Ø³ØªÛ• â†”")
-        b2.bind(on_press=check_dir)
-        b3 = KurdishButton(text="Ú˜Ù…Ø±Ø¯Ù† ðŸ“Š")
-        b3.bind(on_press=count)
-        b4 = KurdishButton(text="Ú˜Ù…Ø§Ø±Û•ØŸ ðŸ”¢")
-        b4.bind(on_press=validate_num)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-        btns.add_widget(b4)
-
+        b1 = KurdishButton(text="Is Kurdish?"); b1.bind(on_press=kurdish)
+        b2 = KurdishButton(text="Direction"); b2.bind(on_press=direction)
+        b3 = KurdishButton(text="Count"); b3.bind(on_press=count)
+        b4 = KurdishButton(text="Number?"); b4.bind(on_press=numval)
+        btns.add_widget(b1); btns.add_widget(b2)
+        btns.add_widget(b3); btns.add_widget(b4)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_currency_tab(self, layout):
-        inp = KurdishInput(hint_text="Ø¨Ú• Ø¨Ù†ÙˆÙˆØ³Û•... (1500000)")
-        result = ResultLabel(text="")
+    def _tab_currency(self, layout):
+        inp = KurdishInput(hint_text="Amount... (1500000)")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=3, size_hint_y=None, height=dp(50), spacing=dp(5))
 
         def iqd(_):
             try:
-                amount = float(inp.text.replace(",", ""))
-                result.text = KurdishCurrency.format(amount, show_name=True)
-            except ValueError:
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•"
+                a = float(inp.text.replace(",", ""))
+                result.text = KurdishCurrency.format(a, show_name=True)
+            except: result.text = "Enter a number"
 
         def usd(_):
             try:
-                amount = float(inp.text.replace(",", ""))
+                a = float(inp.text.replace(",", ""))
                 result.text = KurdishCurrency.format(
-                    amount, currency=CurrencyType.USD,
-                    show_name=True, decimal_places=2)
-            except ValueError:
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•"
+                    a, currency=CurrencyType.USD, show_name=True, decimal_places=2)
+            except: result.text = "Enter a number"
 
-        def ku_digits(_):
+        def ku(_):
             try:
-                amount = float(inp.text.replace(",", ""))
+                a = float(inp.text.replace(",", ""))
                 result.text = KurdishCurrency.format(
-                    amount, use_kurdish_digits=True, show_name=True)
-            except ValueError:
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ø¨Ù†ÙˆÙˆØ³Û•"
+                    a, use_kurdish_digits=True, show_name=True)
+            except: result.text = "Enter a number"
 
-        b1 = KurdishButton(text="Ø¯ÛŒÙ†Ø§Ø±")
-        b1.bind(on_press=iqd)
-        b2 = KurdishButton(text="Ø¯Û†Ù„Ø§Ø±")
-        b2.bind(on_press=usd)
-        b3 = KurdishButton(text="Ú©ÙˆØ±Ø¯ÛŒ")
-        b3.bind(on_press=ku_digits)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-
+        b1 = KurdishButton(text="IQD"); b1.bind(on_press=iqd)
+        b2 = KurdishButton(text="USD"); b2.bind(on_press=usd)
+        b3 = KurdishButton(text="Kurdish"); b3.bind(on_press=ku)
+        btns.add_widget(b1); btns.add_widget(b2); btns.add_widget(b3)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_plural_tab(self, layout):
-        inp = KurdishInput(hint_text="ÙˆØ´Û• Ø¨Ù†ÙˆÙˆØ³Û•... (Ú©ØªÛŽØ¨)")
-        result = ResultLabel(text="")
+    def _tab_plural(self, layout):
+        inp = KurdishInput(hint_text="Word or '5 book'...")
+        result = ResultLabel()
         layout.add_widget(inp)
 
         btns = GridLayout(cols=3, size_hint_y=None, height=dp(50), spacing=dp(5))
 
-        def definite(_):
+        def plural(_):
             w = inp.text
             result.text = (
-                f"ØªØ§Ú©: {w}\n"
-                f"Ú©Û† (Ø¯ÛŒØ§Ø±ÛŒ): {plural_definite(w)}\n"
-                f"Ú©Û† (Ù†Ø§Ø¯ÛŒØ§Ø±ÛŒ): {plural_indefinite(w)}"
+                f"Singular: {w}\n"
+                f"Definite: {plural_definite(w)}\n"
+                f"Indefinite: {plural_indefinite(w)}"
             )
 
-        def singular(_):
+        def sing(_):
             w = inp.text
             result.text = (
-                f"Ú©Û†: {w}\n"
-                f"ØªØ§Ú©: {KurdishPlural.singular(w)}\n"
-                f"Ú©Û†ÛŒÛ•ØŸ: {'Ø¨Û•ÚµÛŽ' if KurdishPlural.is_plural(w) else 'Ù†Û•Ø®ÛŽØ±'}"
+                f"Plural: {w}\n"
+                f"Singular: {KurdishPlural.singular(w)}\n"
+                f"Is plural: {KurdishPlural.is_plural(w)}"
             )
 
-        def count_word(_):
+        def cnt(_):
             try:
                 parts = inp.text.split()
-                num = int(parts[0])
-                word = parts[1] if len(parts) > 1 else "Ø´Øª"
-                result.text = KurdishCountSuffix.count(
-                    num, word, use_kurdish_digits=True)
-            except (ValueError, IndexError):
-                result.text = "âš ï¸ Ú˜Ù…Ø§Ø±Û• Ùˆ ÙˆØ´Û• Ø¨Ù†ÙˆÙˆØ³Û• (5 Ú©ØªÛŽØ¨)"
+                n = int(parts[0])
+                w = parts[1] if len(parts) > 1 else "item"
+                result.text = KurdishCountSuffix.count(n, w, use_kurdish_digits=True)
+            except:
+                result.text = "Enter: number word (e.g. 5 book)"
 
-        b1 = KurdishButton(text="Ú©Û†Ú©Ø±Ø¯Ù†Û•ÙˆÛ•")
-        b1.bind(on_press=definite)
-        b2 = KurdishButton(text="ØªØ§Ú©Ú©Ø±Ø¯Ù†Û•ÙˆÛ•")
-        b2.bind(on_press=singular)
-        b3 = KurdishButton(text="Ú˜Ù…Ø§Ø±Û•+ÙˆØ´Û•")
-        b3.bind(on_press=count_word)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-
+        b1 = KurdishButton(text="Pluralize"); b1.bind(on_press=plural)
+        b2 = KurdishButton(text="Singularize"); b2.bind(on_press=sing)
+        b3 = KurdishButton(text="Count+Word"); b3.bind(on_press=cnt)
+        btns.add_widget(b1); btns.add_widget(b2); btns.add_widget(b3)
         layout.add_widget(btns)
         layout.add_widget(result)
 
-    def _build_calendar_tab(self, layout):
-        result = ResultLabel(text="")
-
+    def _tab_calendar(self, layout):
+        result = ResultLabel()
         btns = GridLayout(cols=2, size_hint_y=None, height=dp(150), spacing=dp(5))
 
-        def show_today(_):
-            now = datetime.now()
-            gregorian = KurdishDateTime.format(now, "EEEEØŒ dd MMMM yyyy")
-            hijri = KurdishCalendar.format_hijri(now)
-            kurdish_cal = KurdishCalendar.format_kurdish(now)
-            result.text = (
-                f"ðŸ“… Ú¯Ø±ÛŒÚ¯Û†Ø±ÛŒ: {gregorian}\n"
-                f"ðŸ•Œ Ù‡ÛŒØ¬Ø±ÛŒ: {hijri}\n"
-                f"â˜€ï¸ Ú©ÙˆØ±Ø¯ÛŒ: {kurdish_cal}"
-            )
-
-        def show_relative(_):
+        def today(_):
             now = datetime.now()
             result.text = (
-                f"Ù¥ Ø®ÙˆÙ„Û•Ú© Ù„Û•Ù…Û•ÙˆÙ¾ÛŽØ´: {kurdish_relative_time(now - timedelta(minutes=5))}\n"
-                f"Ù£ Ú©Ø§ØªÚ˜Ù…ÛŽØ± Ù„Û•Ù…Û•ÙˆÙ¾ÛŽØ´: {kurdish_relative_time(now - timedelta(hours=3))}\n"
-                f"Ø¯ÙˆÛŽÙ†ÛŽ: {kurdish_relative_time(now - timedelta(days=1))}\n"
-                f"Ø³Ø¨Û•ÛŒÙ†ÛŽ: {kurdish_relative_time(now + timedelta(days=1))}"
+                f"Gregorian: {KurdishDateTime.format(now, 'EEEE, dd MMMM yyyy')}\n"
+                f"Hijri: {KurdishCalendar.format_hijri(now)}\n"
+                f"Kurdish: {KurdishCalendar.format_kurdish(now)}"
             )
 
-        def show_color(_):
+        def relative(_):
+            now = datetime.now()
+            result.text = (
+                f"5 min ago: {kurdish_relative_time(now - timedelta(minutes=5))}\n"
+                f"3 hrs ago: {kurdish_relative_time(now - timedelta(hours=3))}\n"
+                f"Yesterday: {kurdish_relative_time(now - timedelta(days=1))}\n"
+                f"Tomorrow: {kurdish_relative_time(now + timedelta(days=1))}"
+            )
+
+        def color(_):
             import random
-            r, g, b = random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
-            name = KurdishColor.get_closest_name(r, g, b)
-            result.text = f"ðŸŽ¨ RGB({r},{g},{b}) = {name}"
+            r, g, b = random.randint(0,255), random.randint(0,255), random.randint(0,255)
+            result.text = f"RGB({r},{g},{b}) = {KurdishColor.get_closest_name(r,g,b)}"
 
-        def show_range(_):
+        def ranges(_):
             result.text = (
                 f"1-5: {KurdishNumberRange.to_words(1, 5)}\n"
                 f"10-100: {KurdishNumberRange.to_words(10, 100)}\n"
                 f"1-1000: {KurdishNumberRange.to_words(1, 1000)}"
             )
 
-        def show_greeting(_):
+        def greet(_):
             result.text = (
-                f"Ø¨Û•ÛŒØ§Ù†ÛŒ: {KurdishGreeting.from_hour(8)}\n"
-                f"Ù†ÛŒÙˆÛ•Ú•Û†: {KurdishGreeting.from_hour(14)}\n"
-                f"Ø¦ÛŽÙˆØ§Ø±Û•: {KurdishGreeting.from_hour(19)}\n"
-                f"Ø´Û•Ùˆ: {KurdishGreeting.from_hour(23)}\n"
-                f"Ø¦ÛŽØ³ØªØ§: {KurdishGreeting.with_name('Ø¯Ø§Ù†Ø§')}"
+                f"Morning: {KurdishGreeting.from_hour(8)}\n"
+                f"Noon: {KurdishGreeting.from_hour(14)}\n"
+                f"Evening: {KurdishGreeting.from_hour(19)}\n"
+                f"Night: {KurdishGreeting.from_hour(23)}\n"
+                f"Now: {KurdishGreeting.with_name('Dana')}"
             )
 
-        def show_validators(_):
+        def validators(_):
             result.text = (
-                f"Ø¦ÛŒÙ…Û•ÛŒÙ„ test@x.com: {KurdishValidators.email('test@x.com') or 'âœ…'}\n"
-                f"Ø¦ÛŒÙ…Û•ÛŒÙ„ bad: {KurdishValidators.email('bad')}\n"
-                f"Ù…Û†Ø¨Ø§ÛŒÙ„ 07501234567: {KurdishValidators.phone('07501234567') or 'âœ…'}\n"
-                f"Ù…Û†Ø¨Ø§ÛŒÙ„ 123: {KurdishValidators.phone('123')}"
+                f"Email test@x.com: {KurdishValidators.email('test@x.com') or 'Valid'}\n"
+                f"Email bad: {KurdishValidators.email('bad')}\n"
+                f"Phone 07501234567: {KurdishValidators.phone('07501234567') or 'Valid'}\n"
+                f"Phone 123: {KurdishValidators.phone('123')}"
             )
 
-        b1 = KurdishButton(text="Ø¨Û•Ø±ÙˆØ§Ø±ÛŒ Ø¦Û•Ù…Ú•Û† ðŸ“…")
-        b1.bind(on_press=show_today)
-        b2 = KurdishButton(text="Ú©Ø§ØªÛŒ Ù†Ø³Ø¨ÛŒ â°")
-        b2.bind(on_press=show_relative)
-        b3 = KurdishButton(text="Ú•Û•Ù†Ú¯ ðŸŽ¨")
-        b3.bind(on_press=show_color)
-        b4 = KurdishButton(text="Ú•ÛŒØ²ÛŒ Ú˜Ù…Ø§Ø±Û•")
-        b4.bind(on_press=show_range)
-        b5 = KurdishButton(text="Ø³ÚµØ§ÙˆÚ©Ø±Ø¯Ù† ðŸ‘‹")
-        b5.bind(on_press=show_greeting)
-        b6 = KurdishButton(text="Ù¾Ø´Ú©Ù†ÛŒÙ†ÛŒ ÙÛ†Ø±Ù… âœ“")
-        b6.bind(on_press=show_validators)
-        btns.add_widget(b1)
-        btns.add_widget(b2)
-        btns.add_widget(b3)
-        btns.add_widget(b4)
-        btns.add_widget(b5)
-        btns.add_widget(b6)
-
+        b1 = KurdishButton(text="Today"); b1.bind(on_press=today)
+        b2 = KurdishButton(text="Relative Time"); b2.bind(on_press=relative)
+        b3 = KurdishButton(text="Color"); b3.bind(on_press=color)
+        b4 = KurdishButton(text="Ranges"); b4.bind(on_press=ranges)
+        b5 = KurdishButton(text="Greeting"); b5.bind(on_press=greet)
+        b6 = KurdishButton(text="Validators"); b6.bind(on_press=validators)
+        btns.add_widget(b1); btns.add_widget(b2)
+        btns.add_widget(b3); btns.add_widget(b4)
+        btns.add_widget(b5); btns.add_widget(b6)
         layout.add_widget(btns)
         layout.add_widget(result)
 
 
 if __name__ == "__main__":
     KurdishToolsApp().run()
-
