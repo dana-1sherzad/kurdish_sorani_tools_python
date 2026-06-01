@@ -51,6 +51,7 @@ pip install kurdish-sorani-tools
 | 23 | Calendar | ڕۆژژمێری هیجری و کوردی |
 | 24 | Color Names | ناوی ڕەنگەکان بە کوردی |
 | 25 | Digit to Word | گۆڕینی ژمارە بە دوو شێوە |
+| 26 | Tkinter Support | پشتگیری تکینتەر بۆ پیتەکانی کوردی |
 
 ---
 
@@ -561,6 +562,47 @@ print(digit_to_word("25000", StrType.NUM_WORD))
 # With money
 print(digit_to_word("1500000", StrType.STR_WORD, is_money=True))
 # یەک ملیۆن و پێنج سەد هەزار دیناری عراقی
+```
+
+### 26. Tkinter Support — پشتگیری تکینتەر بۆ پیتەکانی کوردی
+
+Fixes Kurdish character rendering (`ە ڕ ێ ۆ ڵ ڤ`) in Tkinter apps by auto-detecting the best font.
+
+```python
+from kurdish_sorani_tools import KurdishTkinter
+import tkinter as tk
+
+# Method 1: Create a pre-configured window
+root = KurdishTkinter.create_window("ئەپی من")
+
+# Method 2: Fix an existing window
+root = tk.Tk()
+KurdishTkinter.fix_window(root)
+
+# Create widgets with proper Kurdish font
+label = KurdishTkinter.create_label(root, text="سڵاو جیهان ە ڕ ێ ۆ ڵ ڤ")
+label.pack()
+
+entry = KurdishTkinter.create_entry(root, width=30)
+entry.pack()
+
+text = KurdishTkinter.create_text(root, width=40, height=5)
+text.pack()
+
+button = KurdishTkinter.create_button(root, text="کلیک بکە")
+button.pack()
+
+# Get the best font name
+font_name, size = KurdishTkinter.get_best_font(14)
+print(font_name)  # Tahoma (or best available)
+
+# Quick message display
+KurdishTkinter.display_message("سڵاو! ئەمە پەیامێکی کوردییە")
+
+# Access Kurdish character list
+from kurdish_sorani_tools import KURDISH_CHARS, KURDISH_FONTS
+print(KURDISH_CHARS)  # ['ئ', 'ا', 'ب', 'پ', ...]
+print(KURDISH_FONTS)  # ['Tahoma', 'Arial Unicode MS', ...]
 ```
 
 ---
