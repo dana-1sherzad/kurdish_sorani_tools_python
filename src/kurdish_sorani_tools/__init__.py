@@ -31,7 +31,7 @@ from .calendar import KurdishCalendar, HijriDate, KurdishDate
 from .color import KurdishColor
 from .digit_to_word import digit_to_word, StrType
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "Dana Sherzad"
 
 __all__ = [
